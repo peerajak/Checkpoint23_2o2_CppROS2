@@ -22,7 +22,7 @@ public:
 
   explicit WaypointActionClass(
       const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
-      : Node("my_action_server", options) {
+      : Node("waypoint_action_server", options) {
     using namespace std::placeholders;
 
     // Odom
@@ -98,6 +98,7 @@ private:
     // int tiemout = 10;//seconds
 
     for (int i = 0; (i < 10) && rclcpp::ok(); ++i) {
+      RCLCPP_INFO(this->get_logger(), "looping");
       // Check if there is a cancel request
       if (goal_handle->is_canceling()) {
         result->success = false; // message;

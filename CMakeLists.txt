@@ -65,18 +65,22 @@ include_directories(
 
 
 
-add_executable(tortoisebot_waypont_action_server_node src/tortoisebot_waypoints/tortoisebot_action_server.cpp)
+add_executable(tortoisebot_waypoint_action_server_node src/tortoisebot_waypoints/tortoisebot_action_server.cpp)
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-target_link_libraries(tortoisebot_waypont_action_server_node "${cpp_typesupport_target}")
-ament_target_dependencies(tortoisebot_waypont_action_server_node rclcpp rclcpp_action geometry_msgs)
+target_link_libraries(tortoisebot_waypoint_action_server_node "${cpp_typesupport_target}")
+ament_target_dependencies(tortoisebot_waypoint_action_server_node rclcpp rclcpp_action geometry_msgs)
 
 
-
+add_executable(tortoisebot_waypoint_action_client_node src/tortoisebot_waypoints/tortoisebot_action_client.cpp)
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(tortoisebot_waypoint_action_client_node "${cpp_typesupport_target}")
+ament_target_dependencies(tortoisebot_waypoint_action_client_node rclcpp rclcpp_action geometry_msgs)
 
 
 
 install(TARGETS
-   tortoisebot_waypont_action_server_node
+   tortoisebot_waypoint_action_server_node
+   tortoisebot_waypoint_action_client_node
    DESTINATION lib/${PROJECT_NAME}
  )
 
