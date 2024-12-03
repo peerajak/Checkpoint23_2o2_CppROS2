@@ -20,3 +20,10 @@ Terminal 3
 source ~/ros2_ws/install/setup.bash
 ros2 launch tortoisebot_waypoints tortoisebot_action_client.launch.py
 ```
+
+
+How to do teleopt on ros2
+
+```
+ros2 run teleop_twist_keyboard teleop_twist_keyboard 
+```

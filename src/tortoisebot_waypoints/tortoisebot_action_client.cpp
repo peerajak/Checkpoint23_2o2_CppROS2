@@ -65,53 +65,54 @@ public:
         this->get_node_logging_interface(),
         this->get_node_waitables_interface(), "tortoisebot_as_2");
 
-    this->timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(0),
-        std::bind(&WaypointActionClient::send_goal, this));
+    // this->timer_ = this->create_wall_timer(
+    //     std::chrono::milliseconds(0),
+    //     std::bind(&WaypointActionClient::send_goal, this));
 
-    start_position.x = -0.068263;
-    start_position.y = 0.50008;
+    start_position.x = 0;
+    start_position.y =0;
     // start_position.theta = theta_from_arctan(0.737, -0.068263, 0.576,
     // 0.50008);
 
-    corner_bottom_left.x = 0.737;
-    corner_bottom_left.y = 0.576;
+    corner_bottom_left.x = 0;
+    corner_bottom_left.y = 2;
     // corner_bottom_left.theta = theta_from_arctan(0.88435, 0.737, -0.57935,
     // 0.576);
 
-    corner_bottom_right.x = 0.88435;
-    corner_bottom_right.y = -0.57935;
+    corner_bottom_right.x = 1.8;
+    corner_bottom_right.y = 2;
     // corner_bottom_right.theta =  theta_from_arctan(-0.53170, 0.88435,
     // -0.47636, -0.57935);
 
-    corner_top_left.x = -0.53170;
-    corner_top_left.y = -0.47636;
+    corner_top_left.x = 1.8;
+    corner_top_left.y = 0;
     // corner_top_left.theta =
     // theta_from_arctan(-0.55024, -0.53170, 0.381047, -0.47636);
 
-    corner_top_right.x = -0.63024;
-    corner_top_right.y = 0.5;
+    corner_top_right.x =0;
+    corner_top_right.y =0;
     // corner_top_right.theta =
     // theta_from_arctan(0.737, -0.55024, 0.50008, 0.381047);
-    corner_goal_Pose.push_back(start_position);
+    //corner_goal_Pose.push_back(start_position);
     corner_goal_Pose.push_back(corner_bottom_left);
     corner_goal_Pose.push_back(corner_bottom_right);
     corner_goal_Pose.push_back(corner_top_left);
     corner_goal_Pose.push_back(corner_top_right);
     for (int i = 0; i < action_counter; i++) {
-      std::rotate(corner_goal_Pose.begin(), corner_goal_Pose.begin() + 1,
+     std::rotate(corner_goal_Pose.begin(), corner_goal_Pose.begin() + 1,
                   corner_goal_Pose.end());
     }
-    current_pos_.x = corner_goal_Pose.back().x;
-    current_pos_.y = corner_goal_Pose.back().y;
+
+   send_goal();
   }
 
   bool is_goal_done() const { return this->goal_done_; }
 
   void send_goal() {
     using namespace std::placeholders;
+    rclcpp::Rate loop_rate(1);
 
-    this->timer_->cancel();
+    //this->timer_->cancel();
 
     this->goal_done_ = false;
 
@@ -128,34 +129,29 @@ public:
 
     auto goal_msg = WaypointAction::Goal();
 
-    goal_msg.position.x = corner_goal_Pose[0].x;
-    goal_msg.position.y = corner_goal_Pose[0].y;
 
-    // theta_from_arctan(goal_msg.position.x, current_pos_.x,
-    //                   goal_msg.position.y, current_pos_.y);
+        goal_msg.position.x = corner_goal_Pose[0].x;
+        goal_msg.position.y = corner_goal_Pose[0].y;
 
-    RCLCPP_INFO(this->get_logger(), "Sending goal x:%f y:%f",
-                goal_msg.position.x, goal_msg.position.y);
+        RCLCPP_INFO(this->get_logger(), "Sending goal x:%f y:%f",
+                    goal_msg.position.x, goal_msg.position.y);
+        auto send_goal_options =
+            rclcpp_action::Client<WaypointAction>::SendGoalOptions();
+        send_goal_options.goal_response_callback =
+            std::bind(&WaypointActionClient::goal_response_callback, this, _1);
+        send_goal_options.feedback_callback =
+            std::bind(&WaypointActionClient::feedback_callback, this, _1, _2);
+        send_goal_options.result_callback =
+            std::bind(&WaypointActionClient::result_callback, this, _1);
+        // real goal sending is here
+        auto goal_handle_future =
+            this->client_ptr_->async_send_goal(goal_msg, send_goal_options);
 
-    auto send_goal_options =
-        rclcpp_action::Client<WaypointAction>::SendGoalOptions();
-
-    send_goal_options.goal_response_callback =
-        std::bind(&WaypointActionClient::goal_response_callback, this, _1);
-
-    send_goal_options.feedback_callback =
-        std::bind(&WaypointActionClient::feedback_callback, this, _1, _2);
-
-    send_goal_options.result_callback =
-        std::bind(&WaypointActionClient::result_callback, this, _1);
-
-    auto goal_handle_future =
-        this->client_ptr_->async_send_goal(goal_msg, send_goal_options);
   }
 
 private:
   rclcpp_action::Client<WaypointAction>::SharedPtr client_ptr_;
-  rclcpp::TimerBase::SharedPtr timer_;
+  //rclcpp::TimerBase::SharedPtr timer_;
   bool goal_done_;
   std::vector<geometry_msgs::msg::Point> corner_goal_Pose;
   geometry_msgs::msg::Point start_position;
@@ -223,6 +219,8 @@ int main(int argc, char **argv) {
     }
     executor.remove_node(action_client);
     action_counter++;
+    if(action_counter>=4)
+        break;
   }
   rclcpp::shutdown();
   return 0;

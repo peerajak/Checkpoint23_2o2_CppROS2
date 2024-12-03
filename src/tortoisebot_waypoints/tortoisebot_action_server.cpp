@@ -13,6 +13,9 @@
 #include "tortoisebot_waypoints/action/waypoint_action.hpp"
 #include <nav_msgs/msg/odometry.hpp>
 #include <std_msgs/msg/empty.hpp>
+#include <math.h>
+
+#define PI 3.1416
 
 class WaypointActionClass : public rclcpp::Node {
 public:
@@ -48,18 +51,32 @@ public:
         this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
   }
 
+  std::tuple<geometry_msgs::msg::Point, double> get_current_robot_position_and_yawrad(){
+      return {current_pos_, current_yaw_rad_};
+  }
+
+  
+
+  double get_desire_pos_angle_yawrad(){
+    return  this->desire_pos_angle_yawrad;
+  }
+
+
 private:
   // Odom
   rclcpp::CallbackGroup::SharedPtr odom1_callback_group_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr subscription1_;
   geometry_msgs::msg::Point desire_pos_, current_pos_;
-  float desire_pos_angle;
+  double desire_pos_angle_yawrad;
   geometry_msgs::msg::Quaternion desire_angle_, current_angle_;
   double target_yaw_rad_, current_yaw_rad_;
   // Action Server
   rclcpp_action::Server<WaypointAction>::SharedPtr action_server_;
   // Cmd_vel
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
+
+  double _dist_precision = 0.25,_yaw_precision= PI/30; // +/- 2 degree allowed;
+  std::string _state;
 
   rclcpp_action::GoalResponse
   handle_goal(const rclcpp_action::GoalUUID &uuid,
@@ -95,33 +112,74 @@ private:
     auto result = std::make_shared<WaypointAction::Result>();
     auto move = geometry_msgs::msg::Twist();
     rclcpp::Rate loop_rate(1);
+    double cnst_speed =0.3;
     // int tiemout = 10;//seconds
+    // Check if there is a cancel request
 
-    for (int i = 0; (i < 10) && rclcpp::ok(); ++i) {
-      RCLCPP_INFO(this->get_logger(), "looping");
-      // Check if there is a cancel request
-      if (goal_handle->is_canceling()) {
+    // WaypointAction robot forward and send feedback
+    RCLCPP_INFO(this->get_logger(),"goal %f,%f received", goal->position.x, goal->position.y);
+    bool success = true;
+
+    // define desired position and errors
+    desire_pos_ = goal->position;
+    this->desire_pos_angle_yawrad = atan2( desire_pos_.y - current_pos_.y, desire_pos_.x -  current_pos_.x);
+    double err_pos = sqrt((( desire_pos_.y - current_pos_.y)*( desire_pos_.y - current_pos_.y)) +((desire_pos_.x -  current_pos_.x)*(desire_pos_.x -  current_pos_.x)));
+    double err_yaw = this->desire_pos_angle_yawrad - current_yaw_rad_;
+
+
+    // perform task
+    while (err_pos > _dist_precision && success){
+        // update vars
+        this->desire_pos_angle_yawrad = atan2( desire_pos_.y - current_pos_.y, desire_pos_.x -  current_pos_.x);
+        err_yaw = this->desire_pos_angle_yawrad - current_yaw_rad_;
+        err_pos = sqrt((( desire_pos_.y - current_pos_.y)*( desire_pos_.y - current_pos_.y)) +((desire_pos_.x -  current_pos_.x)*(desire_pos_.x -  current_pos_.x)));
+        RCLCPP_INFO(this->get_logger(),"Current Yaw: %f", current_yaw_rad_);
+        RCLCPP_INFO(this->get_logger(),"Error pos: %f, threshold %f", err_pos, _dist_precision);
+        RCLCPP_INFO(this->get_logger(),"Desired Yaw: %f", this->desire_pos_angle_yawrad );
+        RCLCPP_INFO(this->get_logger(),"Error Yaw: %f", err_yaw);
+        // logic goes here
+        if (goal_handle->is_canceling()) {
+        success = false;
         result->success = false; // message;
         goal_handle->canceled(result);
         RCLCPP_INFO(this->get_logger(), "Goal canceled");
         return;
-      }
-      // WaypointAction robot forward and send feedback
-      message = "Moving forward...";
-      move.linear.x = 0.3;
-      publisher_->publish(move);
-      goal_handle->publish_feedback(feedback);
-      RCLCPP_INFO(this->get_logger(), "Publish feedback");
+        } else if (abs(err_yaw) > _yaw_precision){
+            // fix yaw
+            RCLCPP_INFO(this->get_logger(),"fix yaw");
+            this->_state = "fix yaw";           
+            if (err_yaw > 0) 
+                move.angular.z = cnst_speed;
+            else 
+                move.angular.z = -cnst_speed;
+            publisher_->publish(move);
+        }else{
+            // go to point
+            RCLCPP_INFO(this->get_logger(),"go to point");
+            this->_state = "go to point";          
+            move.linear.x = cnst_speed;
+            move.angular.z = 0;
+            // move.angular.z = 0.1 if err_yaw > 0 else -0.1
+            publisher_->publish(move);
+        }
+        // send feedback
 
-      loop_rate.sleep();
+        feedback->position = current_pos_;
+        feedback->state = this->_state;
+        goal_handle->publish_feedback(feedback);
+        RCLCPP_INFO(this->get_logger(), "Publish feedback");
+
+        // loop rate
+        loop_rate.sleep();
+        
     }
-
+    // stop
+    move.linear.x = 0.0;
+    move.angular.z = 0.0;
+    publisher_->publish(move);
     // Check if goal is done
-    if (rclcpp::ok()) {
-      result->success =
-          true; // "Finished action server. Robot moved during 5 seconds";
-      move.linear.x = 0.0;
-      publisher_->publish(move);
+    if (success) {
+      result->success = true; // "Finished action server. Robot moved during 5 seconds";
       goal_handle->succeed(result);
       RCLCPP_INFO(this->get_logger(), "Goal succeeded");
     }
@@ -137,6 +195,7 @@ private:
     RCLCPP_DEBUG(this->get_logger(), "current pos=['%f','%f','%f'",
                  current_pos_.x, current_pos_.y, current_yaw_rad_);
   }
+
 
   double yaw_theta_from_quaternion(float qx, float qy, float qz, float qw) {
     double roll_rad, pitch_rad, yaw_rad;
