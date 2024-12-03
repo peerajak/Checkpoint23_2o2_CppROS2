@@ -58,11 +58,21 @@ if(BUILD_TESTING)
 endif()
 
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
+set(HEADER_FILES include/tortoisebot_action_server.h)
+add_library(tortoisebot_action_server_lib src/tortoisebot_waypoints/tortoisebot_action_server_libonly.cpp ${HEADER_FILES} )
+ament_target_dependencies(tortoisebot_action_server_lib rclcpp rclcpp_action geometry_msgs)
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(tortoisebot_action_server_lib "${cpp_typesupport_target}")
+ament_export_targets(tortoisebot_action_server_lib HAS_LIBRARY_TARGET)
 
+add_executable(tortoisebot_waypoint_action_server_libexec_node src/tortoisebot_waypoints/tortoisebot_action_server_libmain.cpp)
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(tortoisebot_waypoint_action_server_libexec_node tortoisebot_action_server_lib "${cpp_typesupport_target}")
+ament_target_dependencies(tortoisebot_waypoint_action_server_libexec_node rclcpp rclcpp_action geometry_msgs)
 
 
 add_executable(tortoisebot_waypoint_action_server_node src/tortoisebot_waypoints/tortoisebot_action_server.cpp)
@@ -81,6 +91,7 @@ ament_target_dependencies(tortoisebot_waypoint_action_client_node rclcpp rclcpp_
 install(TARGETS
    tortoisebot_waypoint_action_server_node
    tortoisebot_waypoint_action_client_node
+   tortoisebot_waypoint_action_server_libexec_node
    DESTINATION lib/${PROJECT_NAME}
  )
 
@@ -89,5 +100,42 @@ install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}/
 )
+
+# install(
+#   DIRECTORY include/
+#   DESTINATION include
+# )
+
+
+# install(
+#   TARGETS tortoisebot_action_server_lib
+#   EXPORT tortoisebot_action_server_lib
+#   LIBRARY DESTINATION lib
+#   ARCHIVE DESTINATION lib
+#   RUNTIME DESTINATION bin
+#   INCLUDES DESTINATION include
+# )
+
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
+
+  set(TESTFILES
+      test/main.cpp
+      test/tortoisebot_action_server_test.cpp
+      )
+  # Add a gtest executables
+  ament_add_gtest(${PROJECT_NAME}_test ${TESTFILES})
+  target_link_libraries(${PROJECT_NAME}_test)
+
+  install(TARGETS
+        ${PROJECT_NAME}_test
+        # Install the generated test executable file to the path after DESTINATION
+        DESTINATION lib/${PROJECT_NAME})
+  # uncomment to enforce lintners and static code analyzers defined in ament_lint_common package        
+  # ament_lint_auto_find_test_dependencies()
+endif()
+
 
 ament_package()

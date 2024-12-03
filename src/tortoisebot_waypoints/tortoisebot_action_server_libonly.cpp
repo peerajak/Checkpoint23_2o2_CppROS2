@@ -10,7 +10,7 @@
 #define PI 3.1416
 using WaypointAction = tortoisebot_waypoints::action::WaypointAction;
 using GoalHandleWaypointAction =  rclcpp_action::ServerGoalHandle<WaypointAction>;
-WaypointActionClass::WaypointActionClass(const rclcpp::NodeOptions &options )
+WaypointActionClass::WaypointActionClass(const rclcpp::NodeOptions &options)
       : Node("waypoint_action_server", options) {
     using namespace std::placeholders;
 
@@ -170,19 +170,4 @@ double WaypointActionClass::yaw_theta_from_quaternion(float qx, float qy, float 
     tf2::Matrix3x3 matrix_tf(odom_quat);
     matrix_tf.getRPY(roll_rad, pitch_rad, yaw_rad);
     return yaw_rad; // In radian
-}
-
-
-
-int main(int argc, char **argv) {
-  rclcpp::init(argc, argv);
-
-  auto action_server = std::make_shared<WaypointActionClass>();
-
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(action_server);
-  executor.spin();
-
-  rclcpp::shutdown();
-  return 0;
 }
