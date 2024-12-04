@@ -46,5 +46,6 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ## Run dummy Gtest
 
 ```
+source ~/ros2_ws/install/setup.bash
 colcon test --packages-select tortoisebot_waypoints --event-handler=console_direct+
 ```

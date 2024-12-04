@@ -37,8 +37,8 @@ WaypointActionClass::WaypointActionClass(const rclcpp::NodeOptions &options)
         this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
 }
 
-std::tuple<geometry_msgs::msg::Point, double> WaypointActionClass::get_current_robot_position_and_yawrad(){
-      return {current_pos_, current_yaw_rad_};
+std::tuple<geometry_msgs::msg::Point, double, double> WaypointActionClass::get_desire_current_robot_position_and_yawrad(){
+      return {current_pos_, current_yaw_rad_,desire_pos_angle_yawrad };
 }
 
 double WaypointActionClass::get_desire_pos_angle_yawrad(){
@@ -103,7 +103,8 @@ void WaypointActionClass::execute(const std::shared_ptr<GoalHandleWaypointAction
         RCLCPP_INFO(this->get_logger(),"Current Yaw: %f", current_yaw_rad_);
         RCLCPP_INFO(this->get_logger(),"Error pos: %f, threshold %f", err_pos, _dist_precision);
         RCLCPP_INFO(this->get_logger(),"Desired Yaw: %f", this->desire_pos_angle_yawrad );
-        RCLCPP_INFO(this->get_logger(),"Error Yaw: %f", err_yaw);
+        RCLCPP_INFO(this->get_logger(),"Error Yaw_: %f", err_yaw); 
+           
         // logic goes here
         if (goal_handle->is_canceling()) {
         success = false;
@@ -145,7 +146,7 @@ void WaypointActionClass::execute(const std::shared_ptr<GoalHandleWaypointAction
     // Check if goal is done
     if (success) {
       result->success = true; // "Finished action server. Robot moved during 5 seconds";
-      goal_handle->succeed(result);
+      goal_handle->succeed(result);      
       RCLCPP_INFO(this->get_logger(), "Goal succeeded");
     }
 }

@@ -37,8 +37,8 @@ WaypointActionClass::WaypointActionClass(const rclcpp::NodeOptions &options )
         this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
 }
 
-std::tuple<geometry_msgs::msg::Point, double> WaypointActionClass::get_current_robot_position_and_yawrad(){
-      return {current_pos_, current_yaw_rad_};
+std::tuple<geometry_msgs::msg::Point, double, double> WaypointActionClass::get_desire_current_robot_position_and_yawrad(){
+      return {current_pos_, current_yaw_rad_, desire_pos_angle_yawrad};
 }
 
 double WaypointActionClass::get_desire_pos_angle_yawrad(){

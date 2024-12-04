@@ -16,7 +16,7 @@ public:
   using GoalHandleWaypointAction =  rclcpp_action::ServerGoalHandle<WaypointAction>;
 
   explicit WaypointActionClass(const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
-  std::tuple<geometry_msgs::msg::Point, double> get_current_robot_position_and_yawrad();
+  std::tuple<geometry_msgs::msg::Point, double, double> get_desire_current_robot_position_and_yawrad();
   double get_desire_pos_angle_yawrad();
 
 private:
