@@ -27,6 +27,14 @@ public:
         std::tuple<geometry_msgs::msg::Point, double, double>desire_current_robot_position_and_yawrad;  
         this->action_client = std::make_shared<WaypointActionClient>(this->goal_x,this->goal_y);
         executor_client.add_node(this->action_client);
+
+        desire_current_robot_position_and_yawrad = this->action_server->get_desire_current_robot_position_and_yawrad();  
+        geometry_msgs::msg::Point start_position = std::get<0>(desire_current_robot_position_and_yawrad);
+        this->start_position_x = start_position.x;
+        this->start_position_y = start_position.y;
+        this->start_yawrad = std::get<1>(desire_current_robot_position_and_yawrad);
+        this->desire_yawrad = atan2( GOAL_Y - this->start_position_y , GOAL_X -  this->start_position_x );
+
         while (!action_client->is_goal_done()) {
             executor_server.spin_some();
             executor_client.spin_some();
@@ -37,7 +45,7 @@ public:
         this->result_position_x = result_position.x;
         this->result_position_y = result_position.y;
         this->result_yawrad = std::get<1>(desire_current_robot_position_and_yawrad);
-        this->desire_yawrad = std::get<2>(desire_current_robot_position_and_yawrad);
+        //this->desire_yawrad = std::get<2>(desire_current_robot_position_and_yawrad);
         
         //return {result_position.x,result_position.y,result_yawrad,desire_yawrad};
     }
@@ -47,6 +55,7 @@ public:
     }
  double goal_x = GOAL_X, goal_y = GOAL_Y;
  double result_position_x, result_position_y, result_yawrad, desire_yawrad;
+ double start_position_x, start_position_y, start_yawrad;
 protected:
   //server node   //client node
  std::shared_ptr<WaypointActionClass> action_server;
@@ -60,7 +69,7 @@ protected:
 
 
 TEST_F(PubSubscriberTestFixture, SimpleTest) {
-  double epsilon = 0.5;
+  double epsilon = 0.25;
   auto fixture_instance = std::make_shared<PubSubscriberTestFixture>();
   double result_position_x = fixture_instance->result_position_x;
   double result_position_y = fixture_instance->result_position_y;
