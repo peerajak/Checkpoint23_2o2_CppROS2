@@ -129,15 +129,13 @@ void WaypointActionClass::execute(const std::shared_ptr<GoalHandleWaypointAction
             // move.angular.z = 0.1 if err_yaw > 0 else -0.1
             publisher_->publish(move);
         }
+        // loop rate
+        loop_rate.sleep();
         // send feedback
-
         feedback->position = current_pos_;
         feedback->state = this->_state;
         goal_handle->publish_feedback(feedback);
         RCLCPP_INFO(this->get_logger(), "Publish feedback");
-
-        // loop rate
-        loop_rate.sleep();
         
     }
     // stop
