@@ -6,8 +6,8 @@
 #include "tortoisebot_action_client.h"
 #include "tortoisebot_action_server.h"
 #define PI 3.1416
-#define GOAL_X 1.8
-#define GOAL_Y 2
+#define GOAL_X 2.5
+#define GOAL_Y 1
 class RclCppFixture {
 public:
   RclCppFixture() { rclcpp::init(0, nullptr); }
@@ -68,7 +68,7 @@ protected:
 };
 
 
-TEST_F(PubSubscriberTestFixture, SimpleTest) {
+TEST_F(PubSubscriberTestFixture, SimpleTest_AHA) {
   double epsilon = 0.25;
   auto fixture_instance = std::make_shared<PubSubscriberTestFixture>();
   double result_position_x = fixture_instance->result_position_x;
