@@ -6,8 +6,14 @@
 #include "tortoisebot_action_client.h"
 #include "tortoisebot_action_server.h"
 #define PI 3.1416
-#define GOAL_X 2.5
-#define GOAL_Y 1
+#define MAKE_TEST_PASS // comment here if you want to make a test failure
+#ifdef MAKE_TEST_PASS
+#define GOAL_X 1.0
+#define GOAL_Y 1.0
+#else
+#define GOAL_X 1.0
+#define GOAL_Y -2.0
+#endif
 class RclCppFixture {
 public:
   RclCppFixture() { rclcpp::init(0, nullptr); }

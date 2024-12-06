@@ -1,5 +1,5 @@
 # Checkpoint23_2o2_CppROS2
-## Quick Guide
+## colcon test Quich Guides
 
 Terminal 1
 
@@ -10,17 +10,30 @@ cd ros2_ws
 ros2 launch tortoisebot_bringup bringup.launch.py use_sim_time:=True
 ```
 
+if the above kill command returns error something like "no such a process", just ignore.
+
 Terminal 2
 
 ```
 source ~/ros2_ws/install/setup.bash
 cd ros2_ws
+colcon build
 colcon test --packages-select tortoisebot_waypoints --event-handler=console_direct+
 ```
 
+if you want to make a test passed, open the file tortoisebot_action_server_test.cpp and make sure the MAKE_TEST_PASS macro is defined
 
+```
+#define MAKE_TEST_PASS
+```
 
-## Guides
+if you want to make a test failed, open the file tortoisebot_action_server_test.cpp and make sure the MAKE_TEST_PASS macro is undefined
+
+```
+// #define MAKE_TEST_PASS
+```
+
+## Testing Guides
 
 
 Terminal 1
